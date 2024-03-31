@@ -387,7 +387,7 @@ import { io } from 'socket.io-client';
 const progress = ref(0);
 
 // Connexion au serveur Socket.IO
-const socket = io('http://127.0.0.1:5000');
+const socket = io('https://aidviz.onrender.com');
 
 socket.on('connect', () => {
   console.log('Connected to Socket.IO server');
@@ -633,7 +633,7 @@ const fetchMappingResults = async () => {
       await submitCSVLink();
     }
 
-    const response = await fetch('http://127.0.0.1:5000/mapping-results');
+    const response = await fetch('https://aidviz.onrender.com/mapping-results');
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des résultats de mapping');
     }
@@ -778,7 +778,7 @@ const fetchMappingResults = async () => {
     await submitCSVLink();
 
     // Une fois que le lien CSV est soumis avec succès, récupérer les résultats de mapping
-    const response = await fetch('http://127.0.0.1:5000/mapping-results');
+    const response = await fetch('https://aidviz.onrender.com/mapping-results');
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des résultats de mapping');
     }
@@ -796,7 +796,7 @@ const fetchMappingResults = async () => {
 
 const submitCSVLink = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:5000/submit-csv-link', {
+    const response = await fetch('https://aidviz.onrender.com/submit-csv-link', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1178,7 +1178,7 @@ const onFileChange = async (e) => {
   formData.append("file", file);
 
   try {
-    const response = await fetch('http://127.0.0.1:5000/submit-csv-file', {
+    const response = await fetch('https://aidviz.onrender.com/submit-csv-file', {
       method: 'POST',
       body: formData,
     });
