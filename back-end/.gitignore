@@ -1,0 +1,46 @@
+# Fichiers de cache et répertoires
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+db.sqlite3-journal
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Fichiers IDE
+.idea/
+.vscode/
+*.swp
+
+
+# Dossiers et fichiers liés au système d'exploitation
+.DS_Store
+Thumbs.db
+
+# Dossiers et fichiers de logs
+logs/
+*.log
+
+# Fichiers de configuration sensibles
+config.py
+secret.py
+
+# Fichiers de dépendances
+pip-log.txt
+pip-delete-this-directory.txt
+requirements.txt
+
+
+
+# Others
+data/
+result/
+upload/
+

@@ -1,0 +1,26 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^2.14.2",
+    "@nuxt/ui-pro": "^1.0.2",
+    "date-fns": "^2.30.0",
+    "formidable": "^3.5.1",
+    "marked": "^12.0.1",
+    "nuxt": "^3.11.1",
+    "openai": "^4.29.2",
+    "papaparse": "^5.4.1",
+    "socket.io-client": "^4.7.5",
+    "v-calendar": "^3.1.2",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  }
+}

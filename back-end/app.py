@@ -1,0 +1,142 @@
+import pandas as pd
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from io import StringIO
+from tqdm import tqdm
+from werkzeug.utils import secure_filename
+import os
+from flask_socketio import SocketIO, emit
+
+app = Flask(__name__)
+CORS(app)  # Activation de CORS pour votre application Flask
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Chemins des fichiers
+pcg_filepath = './data/plan-comptable-francais-excel.csv'
+output_csv_filepath = './result/mapped_grand_livre.csv'  # Chemin du fichier CSV de sortie
+
+@app.route('/submit-csv-link', methods=['POST'])
+def submit_csv_link():
+    global grand_livre_df
+    
+    data = request.get_json()
+    csv_link = data.get('link')
+
+    # Chargement des données
+    pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
+    pcg_df.columns = ['compte_code', 'categorie']
+
+    grand_livre_df = load_csv(csv_link, header=0)
+
+    # Application du mapping et ajout de la colonne mapped_categorie
+    grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
+
+    # Sauvegarde en format CSV
+    grand_livre_df.to_csv(output_csv_filepath, index=False)
+
+    return jsonify({'message': 'Lien du fichier CSV soumis avec succès.'})
+
+def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        raw_data = f.read()
+
+    cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
+
+    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
+    return df
+
+# Chargement du DataFrame avec type spécifié
+pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
+pcg_df.columns = ['compte_code', 'categorie']
+
+print(pcg_df.head())  # Pour vérifier les premières lignes du DataFrame
+print(pcg_df.dtypes)  # Pour vérifier les types de données des colonnes
+
+
+def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
+    # Filtrer les données pour ne garder que celles de l'année 2021 (ou toute autre condition)
+    grand_livre_df['date'] = pd.to_datetime(grand_livre_df['date'])
+    grand_livre_df = grand_livre_df[grand_livre_df['date'].dt.year == 2021]
+
+    # Ajout des nouvelles colonnes avec des valeurs par défaut vides
+    for i in range(1, 4):
+        grand_livre_df[f'mapped_categorie_{i}'] = ''
+
+    pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
+
+    # Initialiser le total des lignes pour le calcul de la progression
+    total_rows = len(grand_livre_df)
+
+    # Boucle sur chaque ligne de DataFrame pour le mapping
+    for index, row in tqdm(grand_livre_df.iterrows(), total=total_rows, desc='Mapping progress'):
+        compte = str(row['compte'])
+        levels = [compte[:i] for i in range(2, len(compte) + 1)]
+
+        for i, level in enumerate(levels, start=1):
+            matches = pcg_df[pcg_df['compte_code'].str.startswith(level)]
+            if not matches.empty:
+                categorie = matches.iloc[0]['categorie']
+                if i <= 3:
+                    grand_livre_df.at[index, f'mapped_categorie_{i}'] = categorie
+                else:
+                    break
+
+        # Calculer la progression et envoyer à travers SocketIO
+        progress = int((index / total_rows) * 100)
+        socketio.emit('progress', {'progress': progress}, namespace='/')
+
+    return grand_livre_df
+
+
+@app.route('/submit-csv-file', methods=['POST'])
+def submit_csv_file():
+    global grand_livre_df
+
+    # Assurez-vous que le dossier de destination existe
+    UPLOAD_FOLDER = './upload'
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
+    # Vérifiez si le post request a le fichier
+    if 'file' not in request.files:
+        return jsonify({'error': 'Aucun fichier trouvé.'}), 400
+    file = request.files['file']
+
+    # Si l'utilisateur ne sélectionne pas de fichier, le navigateur envoie
+    # un fichier vide sans nom de fichier.
+    if file.filename == '':
+        return jsonify({'error': 'Aucun fichier sélectionné.'}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        csv_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(csv_path)
+
+        # Chargement des données
+        pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
+        pcg_df.columns = ['compte_code', 'categorie']
+
+        grand_livre_df = load_csv(csv_path, header=0)
+
+        # Application du mapping et ajout de la colonne mapped_categorie
+        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df, socketio)
+
+        # Sauvegarde en format CSV
+        grand_livre_df.to_csv(output_csv_filepath, index=False)
+
+        return jsonify({'message': 'Fichier CSV soumis avec succès.'})
+
+    return jsonify({'error': 'Erreur lors du chargement du fichier.'}), 500
+
+
+@app.route('/mapping-results', methods=['GET'])
+def get_mapping_results():
+    # Charger les résultats de mapping depuis le fichier CSV sauvegardé
+    try:
+        mapping_results_df = pd.read_csv(output_csv_filepath)
+        return mapping_results_df.to_json(orient='records')
+    except FileNotFoundError:
+        return jsonify({'error': 'Aucun fichier de résultat trouvé.'}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
