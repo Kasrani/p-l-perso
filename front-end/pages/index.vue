@@ -381,11 +381,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { io } from 'socket.io-client';
+// import { io } from 'socket.io-client';
 
 
 const progress = ref(0);
 
+/*
 // Connexion au serveur Socket.IO
 const socket = io('https://aidviz.onrender.com');
 
@@ -417,6 +418,8 @@ onUnmounted(() => {
   socket.off('progress');
   socket.close();
 });
+
+*/
 
 
 
