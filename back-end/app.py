@@ -62,46 +62,50 @@ def submit_csv_link():
     return jsonify({'message': 'Lien du fichier CSV soumis avec succès.'})
 
 
+pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
+mapping_dict = pcg_df.set_index('compte_code')['categorie'].to_dict()
 
-
-
-def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
-
-    
-    # Filtrer les données pour ne garder que celles de l'année 2021 (ou toute autre condition)
-    grand_livre_df['date'] = pd.to_datetime(grand_livre_df['date'])
-    grand_livre_df = grand_livre_df[grand_livre_df['date'].dt.year == 2021]
-
-    grand_livre_df = grand_livre_df.copy()
-
-    # Ajout des nouvelles colonnes avec des valeurs par défaut vides
+def map_titles_to_labels(grand_livre_df, mapping_dict, socketio):
+    # Préparation des colonnes pour le mappage
     for i in range(1, 4):
         grand_livre_df[f'mapped_categorie_{i}'] = ''
 
-    pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
-
-    # Initialiser le total des lignes pour le calcul de la progression
-    total_rows = len(grand_livre_df)
-
-    # Boucle sur chaque ligne de DataFrame pour le mapping
-    for index, row in tqdm(grand_livre_df.iterrows(), total=total_rows, desc='Mapping progress'):
+    # Fonction pour effectuer le mappage
+    def map_category(row, mapping_dict):
         compte = str(row['compte'])
-        levels = [compte[:i] for i in range(2, len(compte) + 1)]
+        matched = False
 
-        for i, level in enumerate(levels, start=1):
-            matches = pcg_df[pcg_df['compte_code'].str.startswith(level)]
-            if not matches.empty:
-                categorie = matches.iloc[0]['categorie']
-                if i <= 3:
-                    grand_livre_df.at[index, f'mapped_categorie_{i}'] = categorie
-                else:
-                    break
+        # Mappage pour la catégorie de niveau 1 basé sur deux chiffres du compte
+        code = compte[:2]
+        if code in mapping_dict:
+            row['mapped_categorie_1'] = mapping_dict[code]
+            matched = True
 
-        # Calculer la progression et envoyer à travers SocketIO
+        # Boucle à l'envers pour commencer par la correspondance la plus longue pour les catégories suivantes
+        for i in range(len(compte), 2, -1):
+            code = compte[:i]
+            if code in mapping_dict and not matched:
+                row['mapped_categorie_2'] = mapping_dict[code]
+                matched = True
+            elif code in mapping_dict and matched:
+                row['mapped_categorie_3'] = mapping_dict[code]
+                break  # Sortir de la boucle une fois la catégorie de niveau 3 mappée
+
+        return row
+
+    # Application du mappage en utilisant apply
+    grand_livre_df = grand_livre_df.apply(lambda row: map_category(row, mapping_dict), axis=1)
+
+    # Envoi de la progression via SocketIO
+    total_rows = len(grand_livre_df)
+    for index in range(total_rows):
         progress = int((index / total_rows) * 100)
         socketio.emit('progress', {'progress': progress}, namespace='/')
 
     return grand_livre_df
+
+
+
 
 
 @app.route('/submit-csv-file', methods=['POST'])
@@ -132,7 +136,7 @@ def submit_csv_file():
         compte_startswith = ['6', '7']
 
         grand_livre_df = load_csv(csv_path, header=0, usecols=cols_to_load, compte_filter=compte_startswith)
-        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df, socketio)
+        grand_livre_df = map_titles_to_labels(grand_livre_df, mapping_dict, socketio)
 
         grand_livre_df.to_csv(output_csv_filepath, index=False)
 

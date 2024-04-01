@@ -646,6 +646,7 @@ const fetchMappingResults = async () => {
     }
     const data = await response.json();
     mappingResults.value = data;
+    console.log("mappingResults.value", mappingResults.value)
     mappingResultsFormatted.value = formatMappingResults(data);
     updateMappingLevel1Data(mappingResultsFormatted.value);
     saveMappingResults(data);
