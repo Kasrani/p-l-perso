@@ -75,25 +75,31 @@ def map_titles_to_labels(grand_livre_df, mapping_dict, socketio):
     # Fonction pour effectuer le mappage
     def map_category(row, mapping_dict):
         compte = str(row['compte'])
-        matched = False
+        matched_level_1 = False
+        matched_level_2 = False
 
-        # Mappage pour la catégorie de niveau 1 basé sur deux chiffres du compte
-        code = compte[:2]
-        if code in mapping_dict:
-            row['mapped_categorie_1'] = mapping_dict[code]
-            matched = True
+        # Mappage pour la catégorie de niveau 1 (deux chiffres uniquement)
+        code_level_1 = compte[:2]
+        if code_level_1 in mapping_dict:
+            row['mapped_categorie_1'] = mapping_dict[code_level_1]
+            matched_level_1 = True
 
-        # Boucle à l'envers pour commencer par la correspondance la plus longue pour les catégories suivantes
-        for i in range(len(compte), 2, -1):
+        # Mappage pour les catégories de niveau 2 et 3
+        for i in range(3, len(compte) + 1):
             code = compte[:i]
-            if code in mapping_dict and not matched:
-                row['mapped_categorie_2'] = mapping_dict[code]
-                matched = True
-            elif code in mapping_dict and matched:
-                row['mapped_categorie_3'] = mapping_dict[code]
-                break  # Sortir de la boucle une fois la catégorie de niveau 3 mappée
+            if code in mapping_dict:
+                if not matched_level_1:
+                    row['mapped_categorie_1'] = mapping_dict[code]
+                    matched_level_1 = True
+                elif not matched_level_2:
+                    row['mapped_categorie_2'] = mapping_dict[code]
+                    matched_level_2 = True
+                else:
+                    row['mapped_categorie_3'] = mapping_dict[code]
+                    break  # Sortir de la boucle une fois la catégorie de niveau 3 mappée
 
         return row
+
 
     # Application du mappage en utilisant apply
     grand_livre_df = grand_livre_df.apply(lambda row: map_category(row, mapping_dict), axis=1)
