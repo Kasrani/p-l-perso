@@ -76,21 +76,22 @@
           footer: { padding: 'p-4' }
         }">
           <div class="flex px-3 py-3.5 border-b border-gray-200 dark:border-gray-700">
-            <UInput v-model="searchQuery" placeholder="Rechercher..." icon="i-heroicons-magnifying-glass-20-solid" trailing :loading="loadingSearch" />
+            <UInput v-model="searchQuery" placeholder="Rechercher..." icon="i-heroicons-magnifying-glass-20-solid"
+              trailing :loading="loadingSearch" />
             <USelectMenu class="ml-auto" v-model="selectedColumns" :options="columns" multiple placeholder="Columns" />
-            
+
           </div>
 
           <UTable class="w-full" :ui="{ td: { base: 'max-w-80 truncate' } }" :rows="displayedRows"
             :columns="selectedColumns" :loading="loading"
             :loading-state="{ icon: 'i-heroicons-arrow-path-20-solid', label: `Chargement des données... ${progress}%` }"
             :progress="{ color: 'primary', animation: 'carousel' }">
-          
+
             <template #empty-state>
-                  <div class="flex flex-col items-center justify-center py-6 gap-3">
-                    <span class="italic text-sm">Aucune donnée</span>
-                  </div>
-                </template>
+              <div class="flex flex-col items-center justify-center py-6 gap-3">
+                <span class="italic text-sm">Aucune donnée</span>
+              </div>
+            </template>
           </UTable>
           <!-- Number of rows & Pagination -->
           <template #footer>
@@ -465,21 +466,21 @@ const loadingSearch = ref(false);
 
 const displayedRows = computed(() => {
   const startIndex = (page.value - 1) * pageCount;
-  
+
   // Filtrer les données en fonction de l'année et du mois sélectionnés
   const filteredData = mappingResults.value.filter(row => {
     const resultDate = new Date(row.date);
     const resultYear = resultDate.getFullYear().toString();
     const resultMonth = (resultDate.getMonth() + 1).toString().padStart(2, '0'); // Format le mois pour correspondre à votre format de sélection
 
-    return (selectedPeriod.value === 'all' || resultYear === selectedPeriod.value) && 
-           (selectedMonth.value === 'all' || resultMonth === selectedMonth.value);
+    return (selectedPeriod.value === 'all' || resultYear === selectedPeriod.value) &&
+      (selectedMonth.value === 'all' || resultMonth === selectedMonth.value);
   });
 
   // Appliquer la recherche si nécessaire
-  const searchedData = searchQuery.value ? 
-    filteredData.filter(row => 
-      Object.values(row).some(value => 
+  const searchedData = searchQuery.value ?
+    filteredData.filter(row =>
+      Object.values(row).some(value =>
         String(value).toLowerCase().includes(searchQuery.value.toLowerCase())
       )
     ) : filteredData;
@@ -635,8 +636,11 @@ const fetchMappingResults = async () => {
     if (csvLink.value !== "") {
       await submitCSVLink();
     }
+    const backendUrl = process.env.NODE_ENV === 'development'
+      ? 'http://127.0.0.1:5000'
+      : 'https://aidviz.onrender.com';
 
-    const response = await fetch('https://aidviz.onrender.com/mapping-results');
+    const response = await fetch(`${backendUrl}/mapping-results`);
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des résultats de mapping');
     }
@@ -799,7 +803,10 @@ const fetchMappingResults = async () => {
 
 const submitCSVLink = async () => {
   try {
-    const response = await fetch('https://aidviz.onrender.com/submit-csv-link', {
+    const backendUrl = process.env.NODE_ENV === 'development'
+      ? 'http://127.0.0.1:5000'
+      : 'https://aidviz.onrender.com';
+    const response = await fetch(`${backendUrl}/submit-csv-link`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1181,7 +1188,10 @@ const onFileChange = async (e) => {
   formData.append("file", file);
 
   try {
-    const response = await fetch('https://aidviz.onrender.com/submit-csv-file', {
+    const backendUrl = process.env.NODE_ENV === 'development'
+      ? 'http://127.0.0.1:5000'
+      : 'https://aidviz.onrender.com';
+    const response = await fetch(`${backendUrl}/submit-csv-file`, {
       method: 'POST',
       body: formData,
     });
@@ -1230,15 +1240,15 @@ const updateDisplayedRowsAndPagination = () => {
   const filteredData = mappingResults.value.filter(row => {
     const resultDate = new Date(row.date);
     const resultYear = resultDate.getFullYear().toString();
-    const resultMonth = (resultDate.getMonth() + 1).toString().padStart(2, '0'); 
+    const resultMonth = (resultDate.getMonth() + 1).toString().padStart(2, '0');
 
-    return (selectedPeriod.value === 'all' || resultYear === selectedPeriod.value) && 
-           (selectedMonth.value === 'all' || resultMonth === selectedMonth.value);
+    return (selectedPeriod.value === 'all' || resultYear === selectedPeriod.value) &&
+      (selectedMonth.value === 'all' || resultMonth === selectedMonth.value);
   });
 
-  const searchedData = searchQuery.value ? 
-    filteredData.filter(row => 
-      Object.values(row).some(value => 
+  const searchedData = searchQuery.value ?
+    filteredData.filter(row =>
+      Object.values(row).some(value =>
         String(value).toLowerCase().includes(searchQuery.value.toLowerCase())
       )
     ) : filteredData;

@@ -9,7 +9,7 @@ from flask_socketio import SocketIO, emit
 from flask_cors import cross_origin
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://aidviz-frontend.onrender.com"}})
+CORS(app, resources={r"/*": {"origins": ["https://aidviz-frontend.onrender.com", "http://localhost:3000"]}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -37,7 +37,7 @@ print(pcg_df.dtypes)  # Pour vérifier les types de données des colonnes
 
 
 @app.route('/submit-csv-link', methods=['POST'])
-@cross_origin(origins="https://aidviz-frontend.onrender.com")
+@cross_origin(origins=["https://aidviz-frontend.onrender.com", "http://localhost:3000"])
 def submit_csv_link():
     global grand_livre_df
 
@@ -100,7 +100,7 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
 
 
 @app.route('/submit-csv-file', methods=['POST'])
-@cross_origin(origins="https://aidviz-frontend.onrender.com")
+@cross_origin(origins=["https://aidviz-frontend.onrender.com", "http://localhost:3000"])
 def submit_csv_file():
     global grand_livre_df
 
@@ -134,7 +134,7 @@ def submit_csv_file():
 
 
 @app.route('/mapping-results', methods=['GET'])
-@cross_origin(origins="https://aidviz-frontend.onrender.com")
+@cross_origin(origins=["https://aidviz-frontend.onrender.com", "http://localhost:3000"])
 def get_mapping_results():
     # Charger les résultats de mapping depuis le fichier CSV sauvegardé
     try:
