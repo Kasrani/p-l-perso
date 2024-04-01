@@ -12,44 +12,14 @@ CORS(app, resources={r"/api/*": {"origins": "https://aidviz-frontend.onrender.co
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
-# Chemins des fichiers
+# Chemins des dossiers
+UPLOAD_FOLDER = './upload'
+RESULT_FOLDER = './result'
 pcg_filepath = './data/plan-comptable-francais-excel.csv'
-output_csv_filepath = './result/mapped_grand_livre.csv'  # Chemin du fichier CSV de sortie
+output_csv_filepath = os.path.join(RESULT_FOLDER, 'mapped_grand_livre.csv')
 
-@app.route('/submit-csv-link', methods=['POST'])
-def submit_csv_link():
-    global grand_livre_df
-    
-    data = request.get_json()
-    csv_link = data.get('link')
 
-    # Chargement des données
-    pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
-    pcg_df.columns = ['compte_code', 'categorie']
 
-    grand_livre_df = load_csv(csv_link, header=0)
-
-    # Application du mapping et ajout de la colonne mapped_categorie
-    grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
-
-    # Vérifiez si le dossier de sortie existe, sinon créez-le
-    output_dir = os.path.dirname(output_csv_filepath)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Sauvegarde en format CSV
-    grand_livre_df.to_csv(output_csv_filepath, index=False)
-
-    return jsonify({'message': 'Lien du fichier CSV soumis avec succès.'})
-
-def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        raw_data = f.read()
-
-    cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
-
-    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
-    return df
 
 # Chargement du DataFrame avec type spécifié
 pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
@@ -57,6 +27,35 @@ pcg_df.columns = ['compte_code', 'categorie']
 
 print(pcg_df.head())  # Pour vérifier les premières lignes du DataFrame
 print(pcg_df.dtypes)  # Pour vérifier les types de données des colonnes
+
+
+def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        raw_data = f.read()
+    cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
+    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
+    return df
+
+@app.route('/submit-csv-link', methods=['POST'])
+def submit_csv_link():
+    global grand_livre_df
+
+    data = request.get_json()
+    csv_link = data.get('link')
+    pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
+    pcg_df.columns = ['compte_code', 'categorie']
+
+    grand_livre_df = load_csv(csv_link, header=0)
+    grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
+
+    if not os.path.exists(RESULT_FOLDER):
+        os.makedirs(RESULT_FOLDER)
+    grand_livre_df.to_csv(output_csv_filepath, index=False)
+
+    return jsonify({'message': 'Lien du fichier CSV soumis avec succès.'})
+
+
+
 
 
 def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
@@ -98,18 +97,14 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
 def submit_csv_file():
     global grand_livre_df
 
-    # Assurez-vous que le dossier de destination existe
-    UPLOAD_FOLDER = './upload'
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
+    if not os.path.exists(RESULT_FOLDER):
+        os.makedirs(RESULT_FOLDER)
 
-    # Vérifiez si le post request a le fichier
     if 'file' not in request.files:
         return jsonify({'error': 'Aucun fichier trouvé.'}), 400
     file = request.files['file']
-
-    # Si l'utilisateur ne sélectionne pas de fichier, le navigateur envoie
-    # un fichier vide sans nom de fichier.
     if file.filename == '':
         return jsonify({'error': 'Aucun fichier sélectionné.'}), 400
 
@@ -118,16 +113,12 @@ def submit_csv_file():
         csv_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(csv_path)
 
-        # Chargement des données
         pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
         pcg_df.columns = ['compte_code', 'categorie']
 
         grand_livre_df = load_csv(csv_path, header=0)
+        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
 
-        # Application du mapping et ajout de la colonne mapped_categorie
-        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df, socketio)
-
-        # Sauvegarde en format CSV
         grand_livre_df.to_csv(output_csv_filepath, index=False)
 
         return jsonify({'message': 'Fichier CSV soumis avec succès.'})
