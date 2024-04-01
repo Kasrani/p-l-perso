@@ -67,7 +67,6 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
     grand_livre_df = grand_livre_df[grand_livre_df['date'].dt.year == 2021]
 
     grand_livre_df = grand_livre_df.copy()
-    print(grand_livre_df)
 
     # Ajout des nouvelles colonnes avec des valeurs par défaut vides
     for i in range(1, 4):
