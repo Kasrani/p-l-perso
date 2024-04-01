@@ -20,6 +20,12 @@ output_csv_filepath = os.path.join(RESULT_FOLDER, 'mapped_grand_livre.csv')
 
 
 
+def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        raw_data = f.read()
+    cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
+    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
+    return df
 
 # Chargement du DataFrame avec type spécifié
 pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
@@ -27,14 +33,6 @@ pcg_df.columns = ['compte_code', 'categorie']
 
 print(pcg_df.head())  # Pour vérifier les premières lignes du DataFrame
 print(pcg_df.dtypes)  # Pour vérifier les types de données des colonnes
-
-
-def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        raw_data = f.read()
-    cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
-    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
-    return df
 
 @app.route('/submit-csv-link', methods=['POST'])
 def submit_csv_link():
