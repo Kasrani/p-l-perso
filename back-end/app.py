@@ -8,8 +8,9 @@ import os
 from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
-CORS(app)  # Activation de CORS pour votre application Flask
+CORS(app, resources={r"/api/*": {"origins": "https://aidviz-frontend.onrender.com"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
+
 
 # Chemins des fichiers
 pcg_filepath = './data/plan-comptable-francais-excel.csv'
