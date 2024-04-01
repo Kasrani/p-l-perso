@@ -115,7 +115,7 @@ def submit_csv_file():
         pcg_df.columns = ['compte_code', 'categorie']
 
         grand_livre_df = load_csv(csv_path, header=0)
-        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
+        grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df, socketio)
 
         grand_livre_df.to_csv(output_csv_filepath, index=False)
 
