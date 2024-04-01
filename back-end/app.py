@@ -32,6 +32,11 @@ def submit_csv_link():
     # Application du mapping et ajout de la colonne mapped_categorie
     grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df)
 
+    # Vérifiez si le dossier de sortie existe, sinon créez-le
+    output_dir = os.path.dirname(output_csv_filepath)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     # Sauvegarde en format CSV
     grand_livre_df.to_csv(output_csv_filepath, index=False)
 
@@ -61,7 +66,7 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
 
     # Ajout des nouvelles colonnes avec des valeurs par défaut vides
     for i in range(1, 4):
-        grand_livre_df[f'mapped_categorie_{i}'] = ''
+        grand_livre_df.loc[:, f'mapped_categorie_{i}'] = ''
 
     pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
 
