@@ -6,9 +6,10 @@ from tqdm import tqdm
 from werkzeug.utils import secure_filename
 import os
 from flask_socketio import SocketIO, emit
+from flask_cors import cross_origin
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "https://aidviz-frontend.onrender.com"}})
+CORS(app, resources={r"/*": {"origins": "https://aidviz-frontend.onrender.com"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -34,7 +35,9 @@ pcg_df.columns = ['compte_code', 'categorie']
 print(pcg_df.head())  # Pour vérifier les premières lignes du DataFrame
 print(pcg_df.dtypes)  # Pour vérifier les types de données des colonnes
 
+
 @app.route('/submit-csv-link', methods=['POST'])
+@cross_origin(origins="https://aidviz-frontend.onrender.com")
 def submit_csv_link():
     global grand_livre_df
 
@@ -97,6 +100,7 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
 
 
 @app.route('/submit-csv-file', methods=['POST'])
+@cross_origin(origins="https://aidviz-frontend.onrender.com")
 def submit_csv_file():
     global grand_livre_df
 
@@ -130,6 +134,7 @@ def submit_csv_file():
 
 
 @app.route('/mapping-results', methods=['GET'])
+@cross_origin(origins="https://aidviz-frontend.onrender.com")
 def get_mapping_results():
     # Charger les résultats de mapping depuis le fichier CSV sauvegardé
     try:
