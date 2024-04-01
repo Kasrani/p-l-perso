@@ -63,7 +63,7 @@ def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
 
     # Ajout des nouvelles colonnes avec des valeurs par défaut vides
     for i in range(1, 4):
-        grand_livre_df.loc[:, f'mapped_categorie_{i}'] = ''
+        grand_livre_df[f'mapped_categorie_{i}'] = ''
 
     pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
 
