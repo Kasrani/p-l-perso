@@ -21,12 +21,18 @@ output_csv_filepath = os.path.join(RESULT_FOLDER, 'mapped_grand_livre.csv')
 
 
 
-def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None):
+def load_csv(filepath, header=None, skiprows=0, names=None, dtype=None, usecols=None, compte_filter=None):
     with open(filepath, 'r', encoding='utf-8') as f:
         raw_data = f.read()
     cleaned_lines = [line.strip() for line in raw_data.split('\n') if line.strip()]
-    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype)
+    df = pd.read_csv(StringIO('\n'.join(cleaned_lines)), header=header, skiprows=skiprows, names=names, dtype=dtype, usecols=usecols)
+    
+    # Filtrage basé sur les numéros de compte, si nécessaire
+    if compte_filter is not None:
+        df = df[df['compte'].astype(str).str.startswith(tuple(compte_filter))]
+    
     return df
+
 
 # Chargement du DataFrame avec type spécifié
 pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
@@ -122,7 +128,10 @@ def submit_csv_file():
         pcg_df = load_csv(pcg_filepath, header=None, dtype={'compte_code': str})
         pcg_df.columns = ['compte_code', 'categorie']
 
-        grand_livre_df = load_csv(csv_path, header=0)
+        cols_to_load = ['date', 'compte', 'libelleCompte', 'debit', 'credit']
+        compte_startswith = ['6', '7']
+
+        grand_livre_df = load_csv(csv_path, header=0, usecols=cols_to_load, compte_filter=compte_startswith)
         grand_livre_df = map_titles_to_labels(grand_livre_df, pcg_df, socketio)
 
         grand_livre_df.to_csv(output_csv_filepath, index=False)
