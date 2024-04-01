@@ -57,6 +57,8 @@ def submit_csv_link():
 
 
 def map_titles_to_labels(grand_livre_df, pcg_df, socketio):
+
+    grand_livre_df = grand_livre_df.copy()
     # Filtrer les données pour ne garder que celles de l'année 2021 (ou toute autre condition)
     grand_livre_df['date'] = pd.to_datetime(grand_livre_df['date'])
     grand_livre_df = grand_livre_df[grand_livre_df['date'].dt.year == 2021]
