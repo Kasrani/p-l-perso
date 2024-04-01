@@ -66,6 +66,8 @@ pcg_df['compte_code'] = pcg_df['compte_code'].astype(str)
 mapping_dict = pcg_df.set_index('compte_code')['categorie'].to_dict()
 
 def map_titles_to_labels(grand_livre_df, mapping_dict, socketio):
+    grand_livre_df['date'] = pd.to_datetime(grand_livre_df['date'])
+    grand_livre_df = grand_livre_df[grand_livre_df['date'].dt.year == 2021]
     # Préparation des colonnes pour le mappage
     for i in range(1, 4):
         grand_livre_df[f'mapped_categorie_{i}'] = ''
